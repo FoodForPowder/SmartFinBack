@@ -19,7 +19,7 @@ using Microsoft.EntityFrameworkCore;
 
 
 
-namespace SmartFin.Controllers.AuthController
+namespace SmartFin.Controllers
 {
 
     [ApiController]

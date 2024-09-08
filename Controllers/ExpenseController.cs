@@ -3,59 +3,51 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Smartfin.Extensions;
 using SmartFin.DbContexts;
-using SmartFin.DTOs.Goal;
+using SmartFin.DTOs.Expense;
 using SmartFin.Entities;
 using SmartFin.Services;
 
-namespace SmartFin.Controllers
+namespace Smartfin.Controllers
 {
-
     [ApiController]
-    [Route("api/[controller]")]
-    //[Authorize]
-    public class GoalController : ControllerBase
+    [Authorize]
+    public class ExpenseController(ExpenseService service) : ControllerBase
     {
 
-        private readonly GoalService _goalService;
+        private readonly ExpenseService _service = service;
 
-        public GoalController(GoalService goalService)
-        {
-            _goalService = goalService;
-
-        }
-
-        [HttpGet("{goalId}")]
-        public async Task<ActionResult<Goal>> GetUserGoalById(int goalId, [FromQuery] string userId)
+        [HttpGet("{expenseId}")]
+        public async Task<ActionResult<ExpenseDto>> GetUserExpenseById(int expenseId, [FromQuery] string userId)
         {
             var curUserId = User.FindFirstValue("UserId");
             if (userId != curUserId)
             {
-                return Unauthorized("You are not authorized to get this goal's information. ");
+                return Unauthorized("You are not authorized to get this expenses's information. ");
             }
-            var goal = await _goalService.GetGoalByIdAsync(goalId, int.Parse(userId));
-            if (goal == null)
+            var expense = await _service.GetExpenseById(expenseId);
+            if (expense == null)
             {
                 return NotFound();
 
             }
             else
             {
-                return Ok(goal.AsDto());
+                return Ok(expense.asDto());
             }
         }
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Goal>>> GetUserGoals([FromQuery] string userId)
+        public async Task<ActionResult<IEnumerable<ExpenseDto>>> GetUserGoals([FromQuery] string userId)
         {
             var curUserId = User.FindFirstValue("UserId");
             if (userId != curUserId)
             {
-                return Unauthorized("You are not authorized to get this goal's information. ");
+                return Unauthorized("You are not authorized to get this expenses's information. ");
             }
-            return Ok(await _goalService.GetUserGoalsAsync(int.Parse(userId)));
+            return Ok((await _service.GetUsersExpenses(int.Parse(userId))).Select(x => x.asDto()));
 
         }
         [HttpPost]
-        public async Task<ActionResult> CreateUserGoal([FromBody] CreateGoalDto createGoalDto)
+        public async Task<ActionResult> CreateUserExpense([FromBody] CreateExpenseDto createExpenseDto)
         {
             if (!ModelState.IsValid)
             {
@@ -63,7 +55,7 @@ namespace SmartFin.Controllers
             }
             try
             {
-                await _goalService.CreateGoalAsync(createGoalDto);
+                await _service.CreateUserExpense(createExpenseDto);
                 return Ok("Succes");
             }
             catch (Exception ex)
@@ -72,12 +64,12 @@ namespace SmartFin.Controllers
             }
         }
         [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateUserGoal(int id, [FromQuery] string userId, [FromBody] UpdateGoalDto updateGoalDto)
+        public async Task<ActionResult> UpdateUserGoal(int id, [FromQuery] string userId, [FromBody] UpdateExpenseDto updateExpenseDto)
         {
             var curUserId = User.FindFirstValue("UserId");
             if (userId != curUserId)
             {
-                return Unauthorized("You are not authorized to update this goal's information. ");
+                return Unauthorized("You are not authorized to update this expense's information. ");
             }
 
             if (!ModelState.IsValid)
@@ -85,7 +77,7 @@ namespace SmartFin.Controllers
                 return BadRequest(ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage)));
 
             }
-            var res = await _goalService.UpdateGoalAsync(id, int.Parse(userId), updateGoalDto);
+            var res = await _service.UpdateExpense(id, updateExpenseDto);
             if (res)
             {
                 return Ok("Success");
@@ -104,7 +96,7 @@ namespace SmartFin.Controllers
             {
                 return Unauthorized("You are not authorized to delete this goal");
             }
-            var res = await _goalService.DeleteGoalAsync(id, int.Parse(userId));
+            var res = await _service.DeleteExpense(id);
             if (res)
             {
                 return Ok("Success");

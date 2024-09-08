@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "w+SueoiorTc=",
+  "dgSpecHash": "5Kwc7k63Oxs=",
   "success": true,
-  "projectFilePath": "d:\\Проекты\\SmartFinBack\\SmartFin\\SmartFin.csproj",
+  "projectFilePath": "D:\\Проекты\\SmartFinBack\\SmartFin\\SmartFin.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\79964\\.nuget\\packages\\automapper\\13.0.1\\automapper.13.0.1.nupkg.sha512",
     "C:\\Users\\79964\\.nuget\\packages\\automapper.extensions.microsoft.dependencyinjection\\12.0.1\\automapper.extensions.microsoft.dependencyinjection.12.0.1.nupkg.sha512",

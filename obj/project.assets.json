@@ -8226,19 +8226,21 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "d:\\Проекты\\SmartFinBack\\SmartFin\\SmartFin.csproj",
+      "projectUniqueName": "D:\\Проекты\\SmartFinBack\\SmartFin\\SmartFin.csproj",
       "projectName": "SmartFin",
-      "projectPath": "d:\\Проекты\\SmartFinBack\\SmartFin\\SmartFin.csproj",
+      "projectPath": "D:\\Проекты\\SmartFinBack\\SmartFin\\SmartFin.csproj",
       "packagesPath": "C:\\Users\\79964\\.nuget\\packages\\",
-      "outputPath": "d:\\Проекты\\SmartFinBack\\SmartFin\\obj\\",
+      "outputPath": "D:\\Проекты\\SmartFinBack\\SmartFin\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\79964\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\79964\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
         "net8.0"
       ],
       "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "D:\\microservices_project\\packages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },

@@ -8,16 +8,11 @@ namespace SmartFin.Services
 {
     ///TO DO
     ///Сделать DTO для всего
-    public class GoalService
+    public class GoalService (SmartFinDbContext context)
     {
 
-        private readonly SmartFinDbContext _context;
-
-        public GoalService(SmartFinDbContext context)
-        {
-            _context = context;
-        }
-
+        private readonly SmartFinDbContext _context = context;
+       
         public async Task<IEnumerable<Goal>> GetUserGoalsAsync(int userId)
         {
             var goals = await _context.Goals.Where(x => x.UserId == userId).ToListAsync();

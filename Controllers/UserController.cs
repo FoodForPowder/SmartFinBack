@@ -8,13 +8,13 @@ using SmartFin.DTOs.User;
 using SmartFin.Entities;
 using SmartFin.Models;
 
-namespace SmartFin.Controllers.UserController
+namespace SmartFin.Controllers
 {
 
 
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    //[Authorize]
     public class UserController : ControllerBase
     {
 
