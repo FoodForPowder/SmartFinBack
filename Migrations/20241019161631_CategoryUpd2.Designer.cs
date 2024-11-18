@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SmartFin.DbContexts;
@@ -11,9 +12,11 @@ using SmartFin.DbContexts;
 namespace SmartFin.Migrations
 {
     [DbContext(typeof(SmartFinDbContext))]
-    partial class SmartFinDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241019161631_CategoryUpd2")]
+    partial class CategoryUpd2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

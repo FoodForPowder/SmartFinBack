@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Smartfin.Extensions;
 using SmartFin.DTOs;
 using SmartFin.DTOs.User;
 using SmartFin.Entities;
@@ -14,7 +15,7 @@ namespace SmartFin.Controllers
 
     [ApiController]
     [Route("api/[controller]")]
-    //[Authorize]
+    [Authorize]
     public class UserController : ControllerBase
     {
 
@@ -22,26 +23,28 @@ namespace SmartFin.Controllers
 
         private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
+        private readonly UserService _userService;
 
-        public UserController(ILogger<UserController> logger, UserManager<User> userManager, SignInManager<User> signInManager)
+        public UserController(ILogger<UserController> logger, UserManager<User> userManager, SignInManager<User> signInManager, UserService userService)
         {
 
             _userManager = userManager;
             _signInManager = signInManager;
+            _userService = userService;
         }
         [HttpGet]
-        public async   Task<ActionResult<IEnumerable<User>>> GetUsers()
+        public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
             return Ok(await _userManager.Users.ToListAsync());
         }
         [HttpGet("{id}")]
-        public async Task<ActionResult<User>> GetUser(int id)
+        public async Task<ActionResult<UserDTO>> GetUser(int id)
         {
             var user = await _userManager.FindByIdAsync(id.ToString());
             if (user == null)
                 return NotFound();
 
-            return Ok(user);
+            return Ok(user.asDto());
         }
 
         [HttpPut("{id}")]
@@ -73,7 +76,7 @@ namespace SmartFin.Controllers
             }
 
         }
-        [HttpPost("changepass")]
+        [HttpPut("changepass")]
         public async Task<IActionResult> ChangePassword(ChangePassRequest request)
         {
             var user = await _userManager.FindByIdAsync(request.userId);
@@ -99,6 +102,46 @@ namespace SmartFin.Controllers
             }
             await _userManager.DeleteAsync(user);
             return NoContent();
+        }
+
+        [HttpPut("{id}/expense-limit")]
+        public async Task<IActionResult> SetExpenseLimit(int id, [FromBody] decimal? limit)
+        {
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (currentUserId != id.ToString())
+            {
+                return Unauthorized("Вы не можете изменять лимит расходов для другого пользователя.");
+            }
+
+            try
+            {
+                await _userService.UpdateExpenseLimit(id, limit);
+                return Ok("Лимит расходов успешно обновлен");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPut("{id}/monthly-income")]
+        public async Task<IActionResult> SetMonthlyIncome(int id, [FromBody] decimal income)
+        {
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (currentUserId != id.ToString())
+            {
+                return Unauthorized("Вы не можете изменять месячный доход для другого пользователя.");
+            }
+
+            try
+            {
+                await _userService.UpdateMonthlyIncome(id, income);
+                return Ok("Месячный доход успешно обновлен");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }

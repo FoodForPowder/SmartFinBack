@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SmartFin.DbContexts;
@@ -11,9 +12,11 @@ using SmartFin.DbContexts;
 namespace SmartFin.Migrations
 {
     [DbContext(typeof(SmartFinDbContext))]
-    partial class SmartFinDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240918150022_Update")]
+    partial class Update
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -165,17 +168,18 @@ namespace SmartFin.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("id"));
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
+                    b.Property<decimal>("factSum")
+                        .HasColumnType("numeric");
 
                     b.Property<string>("name")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.HasKey("id");
+                    b.Property<decimal>("planSum")
+                        .HasColumnType("numeric");
 
-                    b.HasIndex("UserId");
+                    b.HasKey("id");
 
                     b.ToTable("Categories");
                 });
@@ -207,9 +211,6 @@ namespace SmartFin.Migrations
 
                     b.Property<DateTime>("lastContributionDate")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal>("lastMonthContributionAmount")
-                        .HasColumnType("numeric");
 
                     b.Property<string>("name")
                         .IsRequired()
@@ -244,6 +245,9 @@ namespace SmartFin.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("Goalid")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsRead")
                         .HasColumnType("boolean");
 
@@ -251,12 +255,14 @@ namespace SmartFin.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("goalId")
+                    b.Property<int>("UserId")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("goalId");
+                    b.HasIndex("Goalid");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Notifications");
                 });
@@ -269,7 +275,7 @@ namespace SmartFin.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("id"));
 
-                    b.Property<int?>("CategoryId")
+                    b.Property<int>("CategoryId")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("Date")
@@ -427,17 +433,6 @@ namespace SmartFin.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("SmartFin.Entities.Category", b =>
-                {
-                    b.HasOne("SmartFin.Entities.User", "user")
-                        .WithMany("Categories")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("user");
-                });
-
             modelBuilder.Entity("SmartFin.Entities.Goal", b =>
                 {
                     b.HasOne("SmartFin.Entities.User", "user")
@@ -451,20 +446,26 @@ namespace SmartFin.Migrations
 
             modelBuilder.Entity("SmartFin.Entities.Notification", b =>
                 {
-                    b.HasOne("SmartFin.Entities.Goal", "goal")
+                    b.HasOne("SmartFin.Entities.Goal", null)
                         .WithMany("notifications")
-                        .HasForeignKey("goalId")
+                        .HasForeignKey("Goalid");
+
+                    b.HasOne("SmartFin.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("goal");
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("SmartFin.Entities.Transaction", b =>
                 {
                     b.HasOne("SmartFin.Entities.Category", "category")
-                        .WithMany("Transactions")
-                        .HasForeignKey("CategoryId");
+                        .WithMany("Expenses")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("SmartFin.Entities.User", "user")
                         .WithMany("Transactions")
@@ -479,7 +480,7 @@ namespace SmartFin.Migrations
 
             modelBuilder.Entity("SmartFin.Entities.Category", b =>
                 {
-                    b.Navigation("Transactions");
+                    b.Navigation("Expenses");
                 });
 
             modelBuilder.Entity("SmartFin.Entities.Goal", b =>
@@ -489,8 +490,6 @@ namespace SmartFin.Migrations
 
             modelBuilder.Entity("SmartFin.Entities.User", b =>
                 {
-                    b.Navigation("Categories");
-
                     b.Navigation("Goals");
 
                     b.Navigation("Transactions");

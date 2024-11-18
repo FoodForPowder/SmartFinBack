@@ -1,8 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace SmartFin.DTOs.Expense{
-    public class CreateExpenseDto{
-         
+namespace SmartFin.DTOs.Transaction
+{
+    public class UpdateTransactionDto
+    {
+
         public decimal sum { get; set; }
 
         public DateTime Date { get; set; }
@@ -10,11 +12,5 @@ namespace SmartFin.DTOs.Expense{
         [StringLength(100)]
         public string Name { get; set; }
 
-        [Required]
-        public int UserId { get; set; }
-
-
-        public int CategoryId { get; set; }
-       
     }
 }

@@ -8226,11 +8226,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Проекты\\SmartFinBack\\SmartFin\\SmartFin.csproj",
+      "projectUniqueName": "d:\\Проекты\\SmartFinBack\\SmartFin\\SmartFin.csproj",
       "projectName": "SmartFin",
-      "projectPath": "D:\\Проекты\\SmartFinBack\\SmartFin\\SmartFin.csproj",
+      "projectPath": "d:\\Проекты\\SmartFinBack\\SmartFin\\SmartFin.csproj",
       "packagesPath": "C:\\Users\\79964\\.nuget\\packages\\",
-      "outputPath": "D:\\Проекты\\SmartFinBack\\SmartFin\\obj\\",
+      "outputPath": "d:\\Проекты\\SmartFinBack\\SmartFin\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\79964\\AppData\\Roaming\\NuGet\\NuGet.Config",

@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace SmartFin.Entities
 {
@@ -9,12 +11,13 @@ namespace SmartFin.Entities
         [Required]
         [StringLength(50)]
         public string name { get; set; }
+        public int UserId { get; set; }
 
-        public decimal planSum { get; set; }
+        public virtual ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
 
-        public decimal factSum { get; set; }
-
-        public virtual ICollection<Expense> Expenses { get; set; } = new List<Expense>();
+        [ForeignKey("UserId")]
+        [JsonIgnore]
+        public virtual User? user { get; set; } = null;
 
 
     }

@@ -17,10 +17,6 @@ public class CreateGoalDto
     public string description { get; set; }
 
     public decimal plannedSum { get; set; }
-
-    public decimal currentSum { get; set; }
-
-    public string status { get; set; }
     [Required]
     public int UserId { get; set; }
 }

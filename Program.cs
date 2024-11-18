@@ -46,19 +46,23 @@ builder.Services.AddAuthentication(options =>
                     options.SaveToken = true;
                     options.TokenValidationParameters = new TokenValidationParameters()
                     {
-                        ValidateIssuer = true,
-                        ValidateIssuerSigningKey = true,
-                        ValidateAudience = true,
-                        ValidateLifetime = true,
+                        ValidateIssuer = false,
+                        ValidateIssuerSigningKey = false,
+                        ValidateAudience = false,
+                        ValidateLifetime = false,
                         ValidAudience = builder.Configuration["token:audience"],
                         ValidIssuer = builder.Configuration["token:issuer"],
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["token:key"])),
 
-                        ClockSkew = TimeSpan.FromMinutes(15),
+                        ClockSkew = TimeSpan.FromMinutes(120),
                     };
                 });
 
 builder.Services.AddScoped<GoalService>();
+builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<TransactionService>();
+builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<CategoryService>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

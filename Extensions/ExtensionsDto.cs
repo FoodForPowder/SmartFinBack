@@ -1,5 +1,7 @@
+using SmartFin.DTOs.Category;
 using SmartFin.DTOs.Expense;
 using SmartFin.DTOs.Goal;
+using SmartFin.DTOs.User;
 using SmartFin.Entities;
 
 namespace Smartfin.Extensions
@@ -21,19 +23,43 @@ namespace Smartfin.Extensions
                 currentSum = goal.currentSum,
                 status = goal.status,
                 UserId = goal.UserId,
+                lastContributionDate = goal.lastContributionDate,
+                lastMonthContribution = goal.lastMonthContributionAmount
 
             };
         }
-        public static ExpenseDto asDto(this Expense expense)
+        public static TransactionDto asDto(this Transaction transaction)
         {
-            return new ExpenseDto
+            return new TransactionDto
             {
-                id = expense.id,
-                sum = expense.sum,
-                Date = expense.Date,
-                Name = expense.Name,
-                UserId = expense.UserId,
-                CategoryId = expense.CategoryId,
+                id = transaction.id,
+                sum = transaction.sum,
+                Date = transaction.Date,
+                Name = transaction.Name,
+                UserId = transaction.UserId,
+                CategoryId = transaction.CategoryId,
+            };
+        }
+
+        public static UserDTO asDto(this User user)
+        {
+            return new UserDTO
+            {
+                Name = user.Name,
+                ExpenseLimit = user.ExpenseLimit,
+                MonthlyIncome = user.MonthlyIncome,
+                Email = user.Email,
+                PhoneNumber = user.PhoneNumber,
+                Id = user.Id,
+            };
+        }
+        public static CategoryDTO asDto(this Category category)
+        {
+            return new CategoryDTO
+            {
+                name = category.name,
+                id = category.id,
+                UserId = category.UserId
             };
         }
     }

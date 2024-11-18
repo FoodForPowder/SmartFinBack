@@ -2,52 +2,52 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Smartfin.Extensions;
-using SmartFin.DbContexts;
 using SmartFin.DTOs.Expense;
-using SmartFin.Entities;
+using SmartFin.DTOs.Transaction;
 using SmartFin.Services;
 
 namespace Smartfin.Controllers
 {
     [ApiController]
-    [Authorize]
-    public class ExpenseController(ExpenseService service) : ControllerBase
+    [Route("api/[controller]")]
+    //[Authorize]
+    public class TransactionController(TransactionService service) : ControllerBase
     {
 
-        private readonly ExpenseService _service = service;
+        private readonly TransactionService _service = service;
 
-        [HttpGet("{expenseId}")]
-        public async Task<ActionResult<ExpenseDto>> GetUserExpenseById(int expenseId, [FromQuery] string userId)
+        [HttpGet("{transactionId}")]
+        public async Task<ActionResult<TransactionDto>> GetUserTransactionById(int transactionId, [FromQuery] string userId)
         {
             var curUserId = User.FindFirstValue("UserId");
             if (userId != curUserId)
             {
-                return Unauthorized("You are not authorized to get this expenses's information. ");
+                return Unauthorized("You are not authorized to get this transactions's information. ");
             }
-            var expense = await _service.GetExpenseById(expenseId);
-            if (expense == null)
+            var transaction = await _service.GetTransactionById(transactionId);
+            if (transaction == null)
             {
                 return NotFound();
 
             }
             else
             {
-                return Ok(expense.asDto());
+                return Ok(transaction.asDto());
             }
         }
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ExpenseDto>>> GetUserGoals([FromQuery] string userId)
+        public async Task<ActionResult<IEnumerable<TransactionDto>>> GetUserTransactions([FromQuery] string userId)
         {
             var curUserId = User.FindFirstValue("UserId");
             if (userId != curUserId)
             {
-                return Unauthorized("You are not authorized to get this expenses's information. ");
+                return Unauthorized("You are not authorized to get this transactions's information. ");
             }
-            return Ok((await _service.GetUsersExpenses(int.Parse(userId))).Select(x => x.asDto()));
+            return Ok((await _service.GetUsersTransactions(int.Parse(userId))).Select(x => x.asDto()));
 
         }
         [HttpPost]
-        public async Task<ActionResult> CreateUserExpense([FromBody] CreateExpenseDto createExpenseDto)
+        public async Task<ActionResult> CreateUserTransaction([FromBody] CreateTransactionDto createTransactionDto)
         {
             if (!ModelState.IsValid)
             {
@@ -55,7 +55,7 @@ namespace Smartfin.Controllers
             }
             try
             {
-                await _service.CreateUserExpense(createExpenseDto);
+                await _service.CreateUserTransaction(createTransactionDto);
                 return Ok("Succes");
             }
             catch (Exception ex)
@@ -64,12 +64,12 @@ namespace Smartfin.Controllers
             }
         }
         [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateUserGoal(int id, [FromQuery] string userId, [FromBody] UpdateExpenseDto updateExpenseDto)
+        public async Task<ActionResult> UpdateUserTransaction(int id, [FromQuery] string userId, [FromBody] UpdateTransactionDto updateTransactionDto)
         {
             var curUserId = User.FindFirstValue("UserId");
             if (userId != curUserId)
             {
-                return Unauthorized("You are not authorized to update this expense's information. ");
+                return Unauthorized("You are not authorized to update this transaction's information. ");
             }
 
             if (!ModelState.IsValid)
@@ -77,7 +77,7 @@ namespace Smartfin.Controllers
                 return BadRequest(ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage)));
 
             }
-            var res = await _service.UpdateExpense(id, updateExpenseDto);
+            var res = await _service.UpdateTransaction(id, updateTransactionDto);
             if (res)
             {
                 return Ok("Success");
@@ -89,14 +89,14 @@ namespace Smartfin.Controllers
 
         }
         [HttpDelete("{id}")]
-        public async Task<ActionResult> DeleteGoal(int id, [FromQuery] string userId)
+        public async Task<ActionResult> DeleteTransaction(int id, [FromQuery] string userId)
         {
             var curUserId = User.FindFirstValue("UserId");
             if (userId != curUserId)
             {
                 return Unauthorized("You are not authorized to delete this goal");
             }
-            var res = await _service.DeleteExpense(id);
+            var res = await _service.DeleteTransaction(id);
             if (res)
             {
                 return Ok("Success");

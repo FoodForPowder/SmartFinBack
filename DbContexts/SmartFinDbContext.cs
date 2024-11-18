@@ -11,11 +11,11 @@ namespace SmartFin.DbContexts
 
         public DbSet<Category> Categories { get; set; }
 
-        public DbSet<Expense> Expenses { get; set; }
+        public DbSet<Transaction> Transactions { get; set; }
 
         public DbSet<Goal> Goals { get; set; }
 
-        public DbSet<Remind> Reminds { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
 
         public SmartFinDbContext(DbContextOptions<SmartFinDbContext> options) : base(options) { }
 

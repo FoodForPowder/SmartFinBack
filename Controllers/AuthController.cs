@@ -49,6 +49,7 @@ namespace SmartFin.Controllers
             if (isAuthorized)
             {
                 var AuthResponse = await GetTokens(user);
+                AuthResponse.userId = user.Id;
                 user.RefreshToken = AuthResponse.RefreshToken;
                 await _userManager.UpdateAsync(user);
 

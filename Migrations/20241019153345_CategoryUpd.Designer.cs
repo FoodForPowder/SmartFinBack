@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SmartFin.DbContexts;
@@ -11,9 +12,11 @@ using SmartFin.DbContexts;
 namespace SmartFin.Migrations
 {
     [DbContext(typeof(SmartFinDbContext))]
-    partial class SmartFinDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241019153345_CategoryUpd")]
+    partial class CategoryUpd
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -269,7 +272,7 @@ namespace SmartFin.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("id"));
 
-                    b.Property<int?>("CategoryId")
+                    b.Property<int>("CategoryId")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("Date")
@@ -464,7 +467,9 @@ namespace SmartFin.Migrations
                 {
                     b.HasOne("SmartFin.Entities.Category", "category")
                         .WithMany("Transactions")
-                        .HasForeignKey("CategoryId");
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("SmartFin.Entities.User", "user")
                         .WithMany("Transactions")

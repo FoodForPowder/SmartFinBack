@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SmartFin")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b7d9685f93d12c17c6492201a35d13fc6fc9b786")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f8599e600ffb8ae3e2bf90296f1c72b780d1677a")]
 [assembly: System.Reflection.AssemblyProductAttribute("SmartFin")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SmartFin")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

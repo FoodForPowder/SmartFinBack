@@ -25,6 +25,9 @@ namespace SmartFin.DTOs.Goal
 
         public int UserId { get; set; }
 
+         public decimal lastMonthContribution { get; set; }
+        public DateTime lastContributionDate { get; set; }
+
 
 
     }

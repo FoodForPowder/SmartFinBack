@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SmartFin.DbContexts;
@@ -11,9 +12,11 @@ using SmartFin.DbContexts;
 namespace SmartFin.Migrations
 {
     [DbContext(typeof(SmartFinDbContext))]
-    partial class SmartFinDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240929065414_UpdateTransations")]
+    partial class UpdateTransations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -168,10 +171,16 @@ namespace SmartFin.Migrations
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
 
+                    b.Property<decimal>("factSum")
+                        .HasColumnType("numeric");
+
                     b.Property<string>("name")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
+
+                    b.Property<decimal>("planSum")
+                        .HasColumnType("numeric");
 
                     b.HasKey("id");
 
@@ -208,9 +217,6 @@ namespace SmartFin.Migrations
                     b.Property<DateTime>("lastContributionDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<decimal>("lastMonthContributionAmount")
-                        .HasColumnType("numeric");
-
                     b.Property<string>("name")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -244,6 +250,9 @@ namespace SmartFin.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("Goalid")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsRead")
                         .HasColumnType("boolean");
 
@@ -251,12 +260,14 @@ namespace SmartFin.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("goalId")
+                    b.Property<int>("UserId")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("goalId");
+                    b.HasIndex("Goalid");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Notifications");
                 });
@@ -429,13 +440,11 @@ namespace SmartFin.Migrations
 
             modelBuilder.Entity("SmartFin.Entities.Category", b =>
                 {
-                    b.HasOne("SmartFin.Entities.User", "user")
+                    b.HasOne("SmartFin.Entities.User", null)
                         .WithMany("Categories")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("user");
                 });
 
             modelBuilder.Entity("SmartFin.Entities.Goal", b =>
@@ -451,13 +460,17 @@ namespace SmartFin.Migrations
 
             modelBuilder.Entity("SmartFin.Entities.Notification", b =>
                 {
-                    b.HasOne("SmartFin.Entities.Goal", "goal")
+                    b.HasOne("SmartFin.Entities.Goal", null)
                         .WithMany("notifications")
-                        .HasForeignKey("goalId")
+                        .HasForeignKey("Goalid");
+
+                    b.HasOne("SmartFin.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("goal");
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("SmartFin.Entities.Transaction", b =>

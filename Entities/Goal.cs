@@ -26,13 +26,17 @@ namespace SmartFin.Entities
 
         public decimal currentSum { get; set; }
 
+        public DateTime lastContributionDate { get; set; }
+
+        public decimal lastMonthContributionAmount { get; set; }
+
         public string status { get; set; }
 
         public int UserId { get; set; }
         [ForeignKey("UserId")]
         [JsonIgnore]
         public virtual User? user { get; set; } = null;
-        
-        public virtual ICollection<Remind> Reminds { get; set; } = new List<Remind>();
+
+        public virtual ICollection<Notification> notifications { get; set; } = new List<Notification>();
     }
 }
