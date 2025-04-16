@@ -21,12 +21,12 @@ namespace SmartFin.Services
             return await _context.Categories.FirstOrDefaultAsync(c => c.id == id && c.UserId == userId);
         }
 
-        public async Task<Category> CreateCategoryAsync(CreateCategoryDTO categoryDto)
+        public async Task<Category> CreateCategoryAsync(CategoryDTO categoryDto, int userId)
         {
             var category = new Category
             {
                 name = categoryDto.name,
-                UserId = categoryDto.UserId
+                UserId = userId
             };
 
             _context.Categories.Add(category);
@@ -34,7 +34,7 @@ namespace SmartFin.Services
             return category;
         }
 
-        public async Task<bool> UpdateCategoryAsync(int id, UpdateCategoryDTO categoryDto, int userId)
+        public async Task<bool> UpdateCategoryAsync(int id, CategoryDTO categoryDto, int userId)
         {
             var category = await _context.Categories.FirstOrDefaultAsync(c => c.id == id && c.UserId == userId);
             if (category == null)
@@ -47,12 +47,23 @@ namespace SmartFin.Services
             return true;
         }
 
-        public async Task<bool> DeleteCategoryAsync(int id, int userId)
+        public async Task<bool> DeleteCategoryAsync(int id)
         {
-            var category = await _context.Categories.FirstOrDefaultAsync(c => c.id == id && c.UserId == userId);
+            var category = await _context.Categories.FirstOrDefaultAsync(c => c.id == id);
             if (category == null)
             {
                 return false;
+            }
+
+            // Найти все транзакции с этой категорией и установить CategoryId в null
+            var relatedTransactions = await _context.Transactions
+                .Where(t => t.CategoryId == id)
+                .ToListAsync();
+
+            foreach (var transaction in relatedTransactions)
+            {
+                transaction.CategoryId = null;
+                transaction.category = null;
             }
 
             _context.Categories.Remove(category);

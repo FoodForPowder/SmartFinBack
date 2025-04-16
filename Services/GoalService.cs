@@ -13,7 +13,6 @@ namespace SmartFin.Services
     {
 
         private readonly SmartFinDbContext _context = context;
-        private readonly NotificationService _notificationService = notificationService;
 
         private readonly UserService _userService = userService;
 
@@ -89,14 +88,6 @@ namespace SmartFin.Services
             return (false, null);
         }
 
-        private async Task CalculateGoalPeriod(int userId)
-        {
-            var user = _userService.GetUserById(userId);
-            if (user != null)
-            {
-
-            }
-        }
 
         public async Task<Goal> GetGoalByIdAsync(int id)
         {
@@ -142,13 +133,6 @@ namespace SmartFin.Services
             return activeGoals.Sum(g => g.payment);
         }
 
-        private async Task NotifyInsufficientContributionAsync(Goal goal, decimal expected, decimal actual)
-        {
-            var message = $"Внимание! Вы не смогли отложить необходимую сумму для цели '{goal.name}'. " +
-                          $"Ожидалось: {expected:C}, Фактически: {actual:C}. Цель была пересчитана.";
-            await _notificationService.CreateNotificationAsync(goal.id, message);
-        }
-
 
 
         public async Task ContributeToGoalAsync(int goalId, decimal amount)
@@ -167,7 +151,7 @@ namespace SmartFin.Services
             CreateTransactionDto contributeTransaction = new()
             {
                 Name = $"Пополнение цели: {goal.name}",
-                sum = amount,
+                sum = -amount,
                 Date = DateTime.Now.ToUniversalTime(),
                 UserId = goal.UserId,
                 CategoryId = null
@@ -175,8 +159,6 @@ namespace SmartFin.Services
 
             await _transactionService.CreateUserTransaction(contributeTransaction);
             await _context.SaveChangesAsync();
-
-            //await CheckGoalProgressAsync(goalId);
         }
         private decimal CalculateMonthlyPayment(decimal remainingSum, DateTime startDate, DateTime endDate)
         {

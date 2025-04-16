@@ -15,7 +15,7 @@ namespace SmartFin.Controllers
 
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    //[Authorize]
     public class UserController : ControllerBase
     {
 
@@ -50,7 +50,7 @@ namespace SmartFin.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult<User>> UpdateUser(string id, [FromBody] UpdateUserDto user)
         {
-            var curUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var curUserId = User.FindFirstValue("UserId");
 
             if (curUserId != id)
             {
@@ -107,7 +107,7 @@ namespace SmartFin.Controllers
         [HttpPut("{id}/expense-limit")]
         public async Task<IActionResult> SetExpenseLimit(int id, [FromBody] decimal? limit)
         {
-            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var currentUserId = User.FindFirstValue("UserId");
             if (currentUserId != id.ToString())
             {
                 return Unauthorized("Вы не можете изменять лимит расходов для другого пользователя.");
@@ -127,7 +127,7 @@ namespace SmartFin.Controllers
         [HttpPut("{id}/monthly-income")]
         public async Task<IActionResult> SetMonthlyIncome(int id, [FromBody] decimal income)
         {
-            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var currentUserId = User.FindFirstValue("UserId");
             if (currentUserId != id.ToString())
             {
                 return Unauthorized("Вы не можете изменять месячный доход для другого пользователя.");

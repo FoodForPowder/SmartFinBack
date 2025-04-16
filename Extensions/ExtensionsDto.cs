@@ -53,14 +53,6 @@ namespace Smartfin.Extensions
                 Id = user.Id,
             };
         }
-        public static CategoryDTO asDto(this Category category)
-        {
-            return new CategoryDTO
-            {
-                name = category.name,
-                id = category.id,
-                UserId = category.UserId
-            };
-        }
+       
     }
 }

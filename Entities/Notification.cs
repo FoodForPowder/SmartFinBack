@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace SmartFin.Entities
 {
@@ -13,6 +14,7 @@ namespace SmartFin.Entities
         public int goalId { get; set; }
 
         [ForeignKey("goalId")]
+        [JsonIgnore]
         public virtual Goal goal { get; set; }
 
         [Required]

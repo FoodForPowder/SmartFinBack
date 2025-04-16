@@ -40,20 +40,20 @@ namespace SmartFin.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<Category>> CreateCategory(CreateCategoryDTO categoryDto)
+        public async Task<ActionResult<Category>> CreateCategory(CategoryDTO categoryDto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            categoryDto.UserId = int.Parse(User.FindFirstValue("UserId"));
-            var category = await _categoryService.CreateCategoryAsync(categoryDto);
+            var userId = int.Parse(User.FindFirstValue("UserId"));
+            var category = await _categoryService.CreateCategoryAsync(categoryDto, userId);
             return CreatedAtAction(nameof(GetCategory), new { id = category.id }, category);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateCategory(int id, UpdateCategoryDTO categoryDto)
+        public async Task<IActionResult> UpdateCategory(int id, CategoryDTO categoryDto)
         {
             if (!ModelState.IsValid)
             {
@@ -72,8 +72,7 @@ namespace SmartFin.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCategory(int id)
         {
-            var userId = int.Parse(User.FindFirstValue("UserId"));
-            var result = await _categoryService.DeleteCategoryAsync(id, userId);
+            var result = await _categoryService.DeleteCategoryAsync(id);
             if (!result)
             {
                 return NotFound();

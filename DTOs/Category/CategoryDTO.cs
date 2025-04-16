@@ -5,9 +5,8 @@ namespace SmartFin.DTOs.Category
 
     public class CategoryDTO
     {
-        
-        public int id { get; set; }
+
+        [Required]
         public string name { get; set; }
-        public int UserId { get; set; }
     }
 }

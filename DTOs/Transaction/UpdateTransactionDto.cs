@@ -12,5 +12,6 @@ namespace SmartFin.DTOs.Transaction
         [StringLength(100)]
         public string Name { get; set; }
 
+        public int? CategoryId { get; set; }
     }
 }

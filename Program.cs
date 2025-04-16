@@ -63,6 +63,8 @@ builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<TransactionService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<CategoryService>();
+// Регистрируем фоновую службу
+builder.Services.AddHostedService<GoalNotificationBackgroundService>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
