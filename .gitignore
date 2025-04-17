@@ -1,2 +1,28 @@
-obj/*
-.fake
+# Visual Code (vcode)
+/.vscode
+
+# My personal scratch place that I use to add code, notes that I never want commited
+__scratch
+
+# Mac
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# WebStorm
+.idea/
+
+# vi
+*~
+
+# General
+log/
+*.log
+
+*.dep *.aps *.vbw *.suo *.obj *.ncb *.plg *.bsc *.ilk
+*.exp *.sbr *.opt *.pdb *.idb *.pch *.res *.user
+*\obj
+ *\bin
+ *\Debug
+ *\Release
