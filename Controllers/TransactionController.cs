@@ -2,8 +2,11 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Smartfin.Extensions;
+using SmartFin.Classes;
 using SmartFin.DTOs.Expense;
 using SmartFin.DTOs.Transaction;
+using SmartFin.Interfaces;
+using SmartFin.Parsers;
 using SmartFin.Services;
 
 namespace Smartfin.Controllers
@@ -11,10 +14,18 @@ namespace Smartfin.Controllers
     [ApiController]
     [Route("api/[controller]")]
     //[Authorize]
-    public class TransactionController(TransactionService service) : ControllerBase
+    public class TransactionController : ControllerBase
     {
+        private readonly TransactionService _service;
+        private readonly BankStatementParserFactory _parserFactory;
 
-        private readonly TransactionService _service = service;
+        public TransactionController(
+            TransactionService service,
+            BankStatementParserFactory parserFactory)
+        {
+            _service = service;
+            _parserFactory = parserFactory;
+        }
 
         [HttpGet("{transactionId}")]
         public async Task<ActionResult<TransactionDto>> GetUserTransactionById(int transactionId, [FromQuery] string userId)
@@ -107,5 +118,43 @@ namespace Smartfin.Controllers
             }
         }
 
+        [HttpPost("import")]
+        public async Task<ActionResult<IEnumerable<TransactionDto>>> ImportBankStatement(
+            [FromQuery] string userId,
+            [FromQuery] string bankName,
+            IFormFile file)
+        {
+            // var curUserId = User.FindFirstValue("UserId");
+            // if (userId != curUserId)
+            // {
+            //     return Unauthorized("You are not authorized to import transactions");
+            // }
+
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("File is empty");
+            }
+
+            try
+            {
+                var parser = _parserFactory.CreateParser(bankName, int.Parse(userId));
+                using var stream = file.OpenReadStream();
+                var importedTransactions = await parser.ParseAndImportAsync(stream);
+
+                return Ok(new
+                {
+                    message = "Import successful",
+                    transactions = importedTransactions
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Import failed: {ex.Message}");
+            }
+        }
     }
 }

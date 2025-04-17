@@ -21,7 +21,7 @@ namespace SmartFin.Services
             return await _context.Transactions.Where(x => x.UserId == userid).ToListAsync();
         }
 
-        public async Task CreateUserTransaction(CreateTransactionDto expenseDto)
+        public async Task<int> CreateUserTransaction(CreateTransactionDto expenseDto)
         {
             var Transaction = new Transaction
             {
@@ -32,10 +32,10 @@ namespace SmartFin.Services
                 CategoryId = expenseDto.CategoryId
             };
             _context.Transactions.Add(Transaction);
-            //await CheckExpenseLimitAndNotify(expenseDto.UserId);
-            //await CheckGoalPaymentsPossibility(expenseDto.UserId);
             await _context.SaveChangesAsync();
+            return Transaction.id; // Возвращаем ID созданной транзакции
         }
+
         public async Task<Transaction> GetTransactionById(int id)
         {
             return await _context.Transactions.FirstOrDefaultAsync(x => x.id == id);

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using SmartFin.Classes;
 using SmartFin.DbContexts;
 using SmartFin.Entities;
 using SmartFin.Services;
@@ -63,6 +64,7 @@ builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<TransactionService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<CategoryService>();
+builder.Services.AddScoped<BankStatementParserFactory>();
 // Регистрируем фоновую службу
 builder.Services.AddHostedService<GoalNotificationBackgroundService>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
