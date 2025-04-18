@@ -21,7 +21,6 @@ namespace SmartFin.Parsers
         private readonly CategoryService _categoryService;
         private readonly int _userId;
 
-        // Для хранения категорий
         private Dictionary<string, int?> _categoryCache = new Dictionary<string, int?>();
 
         public YandexBankStatementParser(TransactionService transactionService, CategoryService categoryService, int userId)
@@ -38,217 +37,138 @@ namespace SmartFin.Parsers
 
             try
             {
-                // Извлечение всего текста из PDF
                 string fullText = ExtractTextFromPdf(fileStream);
+                var transactions = ParseYandexFormat(fullText);
 
-                // Разбиваем текст на строки
-                string[] lines = fullText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-
-                // Находим строки с транзакциями
-                // Для отладки сохраним первые 10 строк
-                StringBuilder debugText = new StringBuilder();
-                for (int i = 0; i < Math.Min(10, lines.Length); i++)
+                foreach (var transaction in transactions)
                 {
-                    debugText.AppendLine($"Строка {i}: {lines[i]}");
-                }
-                Console.WriteLine($"Первые строки выписки: {debugText}");
-
-                // Ищем строки, содержащие описание операции, дату и сумму
-                for (int i = 0; i < lines.Length; i++)
-                {
-                    // Пропускаем заголовки таблицы
-                    if (lines[i].Contains("Описание операции") && lines[i].Contains("Дата и время"))
-                        continue;
-
-                    if (lines[i].Contains("Страница") || lines[i].Contains("Продолжение"))
-                        continue;
-
-                    if (lines[i].Contains("Исходящий остаток") || lines[i].Contains("Входящий остаток"))
-                        continue;
-
-                    if (lines[i].Contains("Всего расходных") || lines[i].Contains("Всего приходных"))
-                        continue;
-
-                    // Проверяем, начинается ли строка с ключевых слов, характерных для транзакций
-                    if ((lines[i].StartsWith("Оплата") ||
-                         lines[i].StartsWith("Входящий перевод") ||
-                         lines[i].StartsWith("Исходящий перевод")) &&
-                        i + 1 < lines.Length)
+                    try
                     {
-                        // Ищем строку с датой и суммой
-                        string dateAndAmountLine = "";
-
-                        // Проверяем следующую строку на наличие даты
-                        if (Regex.IsMatch(lines[i + 1], @"\d{2}\.\d{2}\.\d{4}\s+в\s+\d{2}:\d{2}"))
+                        var createdId = await _transactionService.CreateUserTransaction(transaction);
+                        if (createdId > 0)
                         {
-                            dateAndAmountLine = lines[i + 1];
-
-                            // Ищем строку с суммой - может быть дальше
-                            string amountLine = "";
-                            for (int j = i + 2; j < Math.Min(i + 5, lines.Length); j++)
+                            var createdTransaction = await _transactionService.GetTransactionById(createdId);
+                            if (createdTransaction != null)
                             {
-                                if (lines[j].Contains("₽") &&
-                                   (lines[j].Contains("+") || lines[j].Contains("–") || lines[j].Contains("-")))
-                                {
-                                    amountLine = lines[j];
-                                    break;
-                                }
-                            }
-
-                            // Если нашли описание, дату и сумму - парсим транзакцию
-                            if (!string.IsNullOrEmpty(dateAndAmountLine) && !string.IsNullOrEmpty(amountLine))
-                            {
-                                var transaction = ParseTransactionFromLines(
-                                    lines[i],
-                                    dateAndAmountLine,
-                                    amountLine);
-
-                                if (transaction != null)
-                                {
-                                    try
-                                    {
-                                        var createdId = await _transactionService.CreateUserTransaction(transaction);
-                                        if (createdId > 0)
-                                        {
-                                            var createdTransaction = await _transactionService.GetTransactionById(createdId);
-                                            if (createdTransaction != null)
-                                            {
-                                                importedTransactions.Add(createdTransaction.asDto());
-                                            }
-                                        }
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        Console.WriteLine($"Ошибка при создании транзакции: {ex.Message}");
-                                    }
-                                }
+                                importedTransactions.Add(createdTransaction.asDto());
+                                Console.WriteLine($"✅ Импортирована транзакция: {transaction.Date:d}, {transaction.sum}, {transaction.Name}");
                             }
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"❌ Ошибка при создании транзакции: {ex.Message}");
+                    }
                 }
 
-                // Если не нашли транзакции, попробуем альтернативный метод парсинга для табличного формата
-                if (importedTransactions.Count == 0)
+                if (transactions.Count == 0)
                 {
-                    Console.WriteLine("Применяем табличный метод парсинга");
-                    importedTransactions = await ParseTableFormat(lines);
+                    Console.WriteLine("⚠️ Транзакции не найдены.");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка при парсинге выписки: {ex.Message}");
+                Console.WriteLine($"❌ Ошибка при парсинге выписки: {ex.Message}");
                 Console.WriteLine(ex.StackTrace);
             }
 
             return importedTransactions;
         }
 
-        private async Task<List<TransactionDto>> ParseTableFormat(string[] lines)
+        private List<CreateTransactionDto> ParseYandexFormat(string text)
         {
-            var result = new List<TransactionDto>();
+            var transactions = new List<CreateTransactionDto>();
+            var lines = text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
-            // Ищем паттерн: Описание, Дата, Сумма в трех разных колонках в табличном формате
-            for (int i = 0; i < lines.Length - 2; i++)
+            Console.WriteLine("🔎 Отладка: первые строки выписки:");
+            for (int i = 0; i < Math.Min(lines.Length, 30); i++)
             {
+                Console.WriteLine($"[{i}] {lines[i]}");
+            }
+
+            for (int i = 0; i < lines.Length - 3; i++)
+            {
+                string description = lines[i].Trim();
+                string dateLine = lines[i + 1].Trim();
+                string timeLine = lines[i + 2].Trim();
+                string amountLine = lines[i + 3].Trim();
+
+                Console.WriteLine($"\n🔍 Блок {i}:");
+                Console.WriteLine($"Описание: {description}");
+                Console.WriteLine($"Дата: {dateLine}");
+                Console.WriteLine($"Время: {timeLine}");
+                Console.WriteLine($"Сумма: {amountLine}");
+
+                if (!Regex.IsMatch(dateLine, @"^\d{2}\.\d{2}\.\d{4}$") ||
+                    !Regex.IsMatch(timeLine, @"^в\s+\d{2}:\d{2}$") ||
+                    !Regex.IsMatch(amountLine, @"[+\-–−]?\s*\d[\d\s]*,\d{2}\s*₽"))
+                {
+                    Console.WriteLine("❌ Блок не соответствует ожидаемому формату");
+                    continue;
+                }
+
                 try
                 {
-                    // Проверяем форматы строк
-                    string descriptionLine = lines[i].Trim();
-
-                    // Ищем строки с описаниями транзакций
-                    if (!descriptionLine.StartsWith("Оплата") &&
-                        !descriptionLine.StartsWith("Входящий") &&
-                        !descriptionLine.StartsWith("Исходящий"))
-                        continue;
-
-                    // Смотрим на следующую строку - она может содержать дату операции
-                    string dateLine = lines[i + 1].Trim();
-                    if (!Regex.IsMatch(dateLine, @"\d{2}\.\d{2}\.\d{4}\s+в\s+\d{2}:\d{2}"))
-                        continue;
-
-                    // Ищем строку с суммой в следующих нескольких строках
-                    string amountLine = null;
-                    for (int j = i + 2; j < Math.Min(lines.Length, i + 5); j++)
+                    var dateTimeStr = $"{dateLine} {timeLine.Replace("в", "").Trim()}";
+                    if (!DateTime.TryParseExact(dateTimeStr, "dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dateTime))
                     {
-                        if ((lines[j].Contains("+") || lines[j].Contains("–") || lines[j].Contains("-")) &&
-                            lines[j].Contains("₽"))
-                        {
-                            amountLine = lines[j].Trim();
-                            break;
-                        }
+                        Console.WriteLine("❌ Не удалось распарсить дату и время");
+                        continue;
                     }
 
-                    if (amountLine == null)
-                        continue;
-
-                    // Извлекаем данные для транзакции
-                    var dateMatch = Regex.Match(dateLine, @"(\d{2})\.(\d{2})\.(\d{4})\s+в\s+(\d{2}):(\d{2})");
-                    if (!dateMatch.Success)
-                        continue;
-
-                    var dateTime = new DateTime(
-                        int.Parse(dateMatch.Groups[3].Value),
-                        int.Parse(dateMatch.Groups[2].Value),
-                        int.Parse(dateMatch.Groups[1].Value),
-                        int.Parse(dateMatch.Groups[4].Value),
-                        int.Parse(dateMatch.Groups[5].Value),
-                        0
-                    );
-
-                    // Извлекаем сумму
-                    var amountMatch = Regex.Match(amountLine, @"([\+\-–]\s*[\d\s]+,\d{2})\s*₽");
+                    var amountMatch = Regex.Match(amountLine, @"([+\-–−]?\s*\d[\d\s]*,\d{2})");
                     if (!amountMatch.Success)
+                    {
+                        Console.WriteLine("❌ Не удалось извлечь сумму");
                         continue;
+                    }
 
                     var amountStr = amountMatch.Groups[1].Value
+                        .Replace("–", "-")
+                        .Replace("−", "-")
                         .Replace(" ", "")
-                        .Replace("–", "-"); // заменяем тире на минус
+                        .Replace(",", ".");
 
                     if (!decimal.TryParse(amountStr, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal amount))
+                    {
+                        Console.WriteLine($"❌ Не удалось преобразовать сумму: {amountStr}");
                         continue;
+                    }
 
-                    // Создаем транзакцию
                     var transaction = new CreateTransactionDto
                     {
-                        Name = descriptionLine,
+                        Name = description,
                         Date = dateTime,
                         sum = amount,
                         UserId = _userId,
-                        CategoryId = DetermineCategory(descriptionLine)
+                        CategoryId = DetermineCategory(description)
                     };
 
-                    // Создаем и сохраняем транзакцию
-                    var createdId = await _transactionService.CreateUserTransaction(transaction);
-                    if (createdId > 0)
-                    {
-                        var createdTransaction = await _transactionService.GetTransactionById(createdId);
-                        if (createdTransaction != null)
-                        {
-                            result.Add(createdTransaction.asDto());
-                            Console.WriteLine($"Создана транзакция: {descriptionLine}, {dateTime}, {amount}");
-                        }
-                    }
+                    transactions.Add(transaction);
+                    Console.WriteLine($"✅ Добавлена транзакция: {transaction.Date:d}, {transaction.sum}, {transaction.Name}");
+
+                    i += 3; // Переход к следующему блоку
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Ошибка при парсинге строки {i}: {ex.Message}");
+                    Console.WriteLine($"❌ Ошибка при обработке блока: {ex.Message}");
                 }
             }
 
-            return result;
+            return transactions;
         }
 
         private string ExtractTextFromPdf(Stream pdfStream)
         {
-            StringBuilder text = new StringBuilder();
+            var text = new StringBuilder();
 
             using (var reader = new PdfReader(pdfStream))
             using (var document = new PdfDocument(reader))
             {
                 for (int i = 1; i <= document.GetNumberOfPages(); i++)
                 {
-                    ITextExtractionStrategy strategy = new SimpleTextExtractionStrategy();
-                    string pageText = PdfTextExtractor.GetTextFromPage(document.GetPage(i), strategy);
+                    var strategy = new SimpleTextExtractionStrategy();
+                    var pageText = PdfTextExtractor.GetTextFromPage(document.GetPage(i), strategy);
                     text.AppendLine(pageText);
                 }
             }
@@ -256,67 +176,15 @@ namespace SmartFin.Parsers
             return text.ToString();
         }
 
-        private CreateTransactionDto ParseTransactionFromLines(string descriptionLine, string dateLine, string amountLine)
-        {
-            try
-            {
-                // Извлекаем дату и время
-                var dateMatch = Regex.Match(dateLine, @"(\d{2})\.(\d{2})\.(\d{4})\s+в\s+(\d{2}):(\d{2})");
-                if (!dateMatch.Success)
-                    return null;
-
-                var dateTime = new DateTime(
-                    int.Parse(dateMatch.Groups[3].Value),
-                    int.Parse(dateMatch.Groups[2].Value),
-                    int.Parse(dateMatch.Groups[1].Value),
-                    int.Parse(dateMatch.Groups[4].Value),
-                    int.Parse(dateMatch.Groups[5].Value),
-                    0
-                );
-
-                // Извлекаем сумму
-                var amountMatch = Regex.Match(amountLine, @"([\+\-–]\s*[\d\s]+,\d{2})\s*₽");
-                if (!amountMatch.Success)
-                    return null;
-
-                var amountStr = amountMatch.Groups[1].Value
-                    .Replace(" ", "")
-                    .Replace("–", "-"); // заменяем тире на минус
-
-                if (!decimal.TryParse(amountStr, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal amount))
-                    return null;
-
-                // Определяем категорию на основе описания
-                int? categoryId = DetermineCategory(descriptionLine);
-
-                // Создаем транзакцию
-                return new CreateTransactionDto
-                {
-                    Name = descriptionLine,
-                    Date = dateTime,
-                    sum = amount,
-                    UserId = _userId,
-                    CategoryId = categoryId
-                };
-            }
-            catch (Exception)
-            {
-                return null;
-            }
-        }
-
         private async Task InitializeCategories()
         {
-            // Получаем существующие категории
             var categories = await _categoryService.GetUserCategoriesAsync(_userId);
 
-            // Заполняем кэш категорий
             foreach (var category in categories)
             {
                 _categoryCache[category.name.ToLower()] = category.id;
             }
 
-            // Создаем базовые категории, если они отсутствуют
             var defaultCategories = new Dictionary<string, string>
             {
                 { "продукты", "Продукты" },
@@ -338,10 +206,7 @@ namespace SmartFin.Parsers
                         _categoryCache[pair.Key] = newCategory.id;
                         _categoryCache[pair.Value.ToLower()] = newCategory.id;
                     }
-                    catch (Exception)
-                    {
-                        // Игнорируем ошибки создания категорий
-                    }
+                    catch (Exception) { }
                 }
             }
         }
@@ -350,31 +215,25 @@ namespace SmartFin.Parsers
         {
             description = description.ToLower();
 
-            // Маппинг ключевых слов на категории
             var mappings = new Dictionary<string, string>
             {
                 { "pyaterochka", "продукты" },
                 { "magnit", "продукты" },
-                { "krasnoe&beloe", "продукты" },
-                { "lenta", "продукты" },
+                { "krasnoe", "продукты" },
                 { "apteka", "аптека" },
-                { "yandex.market", "магазины" },
-                { "перевод сбп", "переводы" }
+                { "yandex", "магазины" },
+                { "перевод", "переводы" },
+                { "tinkoff", "переводы" },
+                { "sbp", "переводы" }
             };
 
-            foreach (var mapping in mappings)
+            foreach (var kv in mappings)
             {
-                if (description.Contains(mapping.Key.ToLower()))
-                {
-                    if (_categoryCache.TryGetValue(mapping.Value, out int? categoryId))
-                    {
-                        return categoryId;
-                    }
-                }
+                if (description.Contains(kv.Key))
+                    return _categoryCache.TryGetValue(kv.Value, out int? catId) ? catId : null;
             }
 
-            // Категория по умолчанию
-            return _categoryCache.TryGetValue("магазины", out int? defaultCategory) ? defaultCategory : null;
+            return _categoryCache.TryGetValue("магазины", out int? defCatId) ? defCatId : null;
         }
     }
 }

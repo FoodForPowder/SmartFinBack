@@ -93,25 +93,38 @@ namespace SmartFin.Services
                 currentSum = goalDto.currentSum,
                 status = goalDto.status,
                 payment = goalDto.payment,
+                Users = _context.Users.Where(u => goalDto.UserId.Contains(u.Id)).ToList(),
             };
 
             const int maxMonthsToAdd = 120; // Максимальное количество месяцев для добавления
+
             for (int i = 1; i <= maxMonthsToAdd; i++)
             {
-                newGoal.dateOfEnd = newGoal.dateOfEnd.AddMonths(1);
-                newGoal.payment = CalculateMonthlyPayment(newGoal.plannedSum - newGoal.currentSum, DateTime.Now, newGoal.dateOfEnd);
+                newGoal.dateOfEnd = goalDto.dateOfEnd.AddMonths(i);
+                decimal individualPayment = CalculateMonthlyPayment(newGoal.plannedSum - newGoal.currentSum, DateTime.Now, newGoal.dateOfEnd) / newGoal.Users.Count;
 
-                //TODO: Нужно переделать, так как цель теперь общая и нужно учитывать всех пользователей
+                bool allUsersCanAfford = true;
+
+                // Проверяем всех пользователей
                 foreach (var user in newGoal.Users)
                 {
-                    if (!await CanUserAffordGoal(user.Id, newGoal.payment))
+                    if (!await CanUserAffordGoal(user.Id, individualPayment))
                     {
-                        return (false, null); // Если хотя бы один пользователь не может позволить цель, возвращаем false
+                        allUsersCanAfford = false;
+                        break;
                     }
                 }
-                return (true, newGoal);
 
+                // Если все пользователи могут позволить себе цель с текущей датой окончания
+                if (allUsersCanAfford)
+                {
+                    newGoal.payment = individualPayment;
+                    return (true, newGoal);
+                }
             }
+
+            // Если мы дошли сюда, значит даже после увеличения срока на maxMonthsToAdd месяцев
+            // не удалось найти подходящий вариант
             return (false, null);
         }
 
@@ -249,8 +262,18 @@ namespace SmartFin.Services
             {
                 throw new Exception("Вы не можете присоединиться к цели, так как ежемесячный платеж превышает 20% от вашего дохода");
             }
-
+            
             goal.Users.Add(user);
+            (bool successful, Goal newGoal) = await RecalculateGoal(goal.AsDto());
+            if (!successful)
+            {
+                throw new Exception("Не удалось пересчитать цель. Даже после перерасчета сумма ежемесячных отчислений превышает 20% дохода пользователя.");
+            }
+
+            // Копируем данные из пересчитанной цели
+            goal.dateOfEnd = newGoal.dateOfEnd;
+            goal.payment = newGoal.payment;
+            
             await _context.SaveChangesAsync();
         }
     }
