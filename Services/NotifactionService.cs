@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Microsoft.EntityFrameworkCore;
 using SmartFin.DbContexts;
 using SmartFin.Entities;
@@ -31,27 +32,21 @@ namespace SmartFin.Services
         public async Task<List<Notification>> GetUserNotificationsAsync(int userId)
         {
             return await _context.Goals
-         .Where(g => g.UserId == userId)
-         .SelectMany(g => g.notifications)
+         .Where(g => g.Users.Any(x => x.Id == userId))
+         .SelectMany(g => g.Notifications)
          .ToListAsync();
         }
-
-
 
         /// <summary>
         /// Проверяет все активные цели и создает уведомления для пользователей
         /// </summary>
         public async Task CheckAllGoalsAndNotifyUsersAsync()
         {
-
-
-            // Получаем все активные цели
+            // Получаем все активные цели с пользователями
             var activeGoals = await _context.Goals
                 .Where(g => g.status == "В процессе")
-                .Include(g => g.user)
+                .Include(g => g.Users)
                 .ToListAsync();
-
-
 
             var currentMonth = DateTime.Now.Month;
             var currentYear = DateTime.Now.Year;
@@ -64,33 +59,36 @@ namespace SmartFin.Services
 
                 if (isPaymentMade)
                 {
-
                     continue;
                 }
 
-                // Если взноса не было, проверяем достаточность средств у пользователя
-                var userId = goal.UserId;
-
-                // Получаем текущий баланс пользователя (доход - расходы за текущий месяц)
-                var monthlyIncome = goal.user.MonthlyIncome;
-                var monthlyExpenses = await _context.Transactions
-                    .Where(t => t.UserId == userId &&
-                           t.Date.Month == currentMonth &&
-                           t.Date.Year == currentYear &&
-                           t.sum < 0) // Отрицательные значения - расходы
-                    .SumAsync(t => t.sum);
-
-                var currentBalance = monthlyIncome + monthlyExpenses; // monthlyExpenses отрицательное число
-
-                if (currentBalance >= goal.payment)
+                // Для каждого пользователя в цели
+                foreach (var user in goal.Users)
                 {
-                    // Средств достаточно, но взнос не сделан
-                    await NotifySufficientFundsAsync(goal);
-                }
-                else
-                {
-                    // Средств недостаточно
-                    await NotifyInsufficientFundsAsync(goal, currentBalance);
+                    // Получаем текущий баланс пользователя
+                    var monthlyIncome = user.MonthlyIncome;
+                    var monthlyExpenses = await _context.Transactions
+                        .Where(t => t.UserId == user.Id &&
+                               t.Date.Month == currentMonth &&
+                               t.Date.Year == currentYear &&
+                               t.sum < 0)
+                        .SumAsync(t => t.sum);
+
+                    var currentBalance = monthlyIncome + monthlyExpenses;
+
+                    // Индивидуальный платеж - общий платеж поделенный на количество участников
+                    var individualPayment = goal.payment / goal.Users.Count;
+
+                    if (currentBalance >= individualPayment)
+                    {
+                        // Средств достаточно, но взнос не сделан
+                        await NotifySufficientFundsAsync(goal, individualPayment);
+                    }
+                    else
+                    {
+                        // Средств недостаточно
+                        await NotifyInsufficientFundsAsync(goal, currentBalance, individualPayment);
+                    }
                 }
             }
         }
@@ -98,10 +96,10 @@ namespace SmartFin.Services
         /// <summary>
         /// Создает уведомление о том, что средств достаточно для взноса
         /// </summary>
-        private async Task NotifySufficientFundsAsync(Goal goal)
+        private async Task NotifySufficientFundsAsync(Goal goal, decimal individualPayment)
         {
-            var message = $"У вас достаточно средств для внесения ежемесячного платежа {goal.payment:C} по цели '{goal.name}'. " +
-                         "Не забудьте сделать взнос до конца месяца.";
+            var message = $"У вас достаточно средств для внесения вашей части ежемесячного платежа {individualPayment:C} " +
+                         $"по общей цели '{goal.name}'. Не забудьте сделать взнос до конца месяца.";
 
             await CreateNotificationAsync(goal.id, message);
         }
@@ -109,11 +107,11 @@ namespace SmartFin.Services
         /// <summary>
         /// Создает уведомление о том, что средств недостаточно для взноса
         /// </summary>
-        private async Task NotifyInsufficientFundsAsync(Goal goal, decimal currentBalance)
+        private async Task NotifyInsufficientFundsAsync(Goal goal, decimal currentBalance, decimal individualPayment)
         {
-            var shortfall = goal.payment - currentBalance;
-            var message = $"Внимание! У вас недостаточно средств для внесения ежемесячного платежа по цели '{goal.name}'. " +
-                         $"Требуемая сумма: {goal.payment:C}, доступно: {currentBalance:C}. " +
+            var shortfall = individualPayment - currentBalance;
+            var message = $"Внимание! У вас недостаточно средств для внесения вашей части платежа по общей цели '{goal.name}'. " +
+                         $"Ваша часть платежа: {individualPayment:C}, доступно: {currentBalance:C}. " +
                          $"Не хватает: {shortfall:C}. Возможно, вам потребуется пересмотреть план достижения цели.";
 
             await CreateNotificationAsync(goal.id, message);

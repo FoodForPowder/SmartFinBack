@@ -22,7 +22,7 @@ namespace Smartfin.Extensions
                 plannedSum = goal.plannedSum,
                 currentSum = goal.currentSum,
                 status = goal.status,
-                UserId = goal.UserId,
+                UserId = goal.Users.Select(u => u.Id).ToList(),
                 lastContributionDate = goal.lastContributionDate,
                 lastMonthContribution = goal.lastMonthContributionAmount
 
@@ -53,6 +53,6 @@ namespace Smartfin.Extensions
                 Id = user.Id,
             };
         }
-       
+
     }
 }

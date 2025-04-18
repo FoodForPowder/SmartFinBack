@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
@@ -32,11 +33,9 @@ namespace SmartFin.Entities
 
         public string status { get; set; }
 
-        public int UserId { get; set; }
-        [ForeignKey("UserId")]
         [JsonIgnore]
-        public virtual User? user { get; set; } = null;
+        public virtual ICollection<User> Users { get; set; } = new List<User>(); // Many-to-Many связь
 
-        public virtual ICollection<Notification> notifications { get; set; } = new List<Notification>();
+        public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
     }
 }

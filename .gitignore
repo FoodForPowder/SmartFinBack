@@ -1,6 +1,7 @@
 # Visual Code (vcode)
 /.vscode
-
+#vs
+/.vs
 # My personal scratch place that I use to add code, notes that I never want commited
 __scratch
 
@@ -25,4 +26,54 @@ log/
 *\obj
  *\bin
  *\Debug
+  /bin
+ *\Debug
+ *\obj
  *\Release
+ *\Migrations
+
+# Visual Studio / Visual Studio Code
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results and folders
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Bb]in/
+[Oo]bj/
+/[Bb]in/
+/[Oo]bj/
+**/[Bb]in/
+**/[Oo]bj/
+bin/
+obj/
+
+# Migrations
+**/[Mm]igrations/
+[Mm]igrations/
+*.Migrations.cs
+*.Migrations.Designer.cs
+Migrations/
+
+# NuGet Packages
+*.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build/
+*.nuget.props
+*.nuget.targets
+
+# IDE
+.idea/
+*.swp
+*.*~
+
+# OS generated files
+.DS_Store
+Thumbs.db

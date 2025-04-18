@@ -23,6 +23,24 @@ namespace SmartFin.DbContexts
         {
             base.OnModelCreating(modelBuilder);
 
+            // Many-to-Many связь между User и Goal
+            modelBuilder.Entity<User>()
+                .HasMany(e => e.Goals)
+                .WithMany(e => e.Users);
+
+            // One-to-Many связь между User и Transaction
+            modelBuilder.Entity<Transaction>()
+                .HasOne(t => t.user)
+                .WithMany(u => u.Transactions)
+                .HasForeignKey(t => t.UserId)
+                .IsRequired();
+
+            // One-to-Many связь между User и Category
+            modelBuilder.Entity<Category>()
+                .HasOne(c => c.user)
+                .WithMany(u => u.Categories)
+                .HasForeignKey(c => c.UserId)
+                .IsRequired();
         }
     }
 }

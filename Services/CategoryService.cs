@@ -26,7 +26,7 @@ namespace SmartFin.Services
             var category = new Category
             {
                 name = categoryDto.name,
-                UserId = userId
+                UserId = userId,
             };
 
             _context.Categories.Add(category);

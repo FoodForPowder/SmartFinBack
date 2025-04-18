@@ -1,4 +1,3 @@
-
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -15,6 +14,8 @@ using SmartFin.Models.RefreshRequest;
 using SmartFin.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using SmartFin.DTOs.User;
+using Smartfin.Extensions;
 
 
 
@@ -49,7 +50,7 @@ namespace SmartFin.Controllers
             if (isAuthorized)
             {
                 var AuthResponse = await GetTokens(user);
-                AuthResponse.userId = user.Id;
+                AuthResponse.userId = user.Id; // Теперь это int
                 user.RefreshToken = AuthResponse.RefreshToken;
                 await _userManager.UpdateAsync(user);
 
@@ -230,6 +231,15 @@ namespace SmartFin.Controllers
             return Ok("Refresh token is revoked");
 
 
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<UserDTO>> GetUser(int id)
+        {
+            var user = await _userManager.FindByIdAsync(id.ToString());
+            if (user == null)
+                return NotFound();
+            return Ok(user.asDto());
         }
     }
 }
