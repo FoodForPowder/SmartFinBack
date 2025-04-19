@@ -260,11 +260,6 @@ namespace SmartFin.Services
                 throw new Exception("Пользователь не найден");
             }
 
-            if (goal.Users.Any(u => u.Id == userId))
-            {
-                throw new Exception("Вы уже являетесь участником этой цели");
-            }
-
             if (!await CanUserAffordGoal(userId, goal.payment))
             {
                 throw new Exception("Вы не можете присоединиться к цели, так как ежемесячный платеж превышает 20% от вашего дохода");

@@ -48,14 +48,14 @@ namespace SmartFin.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Goal>>> GetUsersGoals()
+        public async Task<ActionResult<IEnumerable<GoalDto>>> GetUsersGoals()
         {
             var userId = User.FindFirstValue("UserId");
             if (string.IsNullOrEmpty(userId))
             {
                 return Unauthorized("Необходимо войти в систему.");
             }
-            return Ok(await _goalService.GetUserGoalsAsync(int.Parse(userId)));
+            return Ok((await _goalService.GetUserGoalsAsync(int.Parse(userId))).Select(x=> x.AsDto()));
 
         }
         [HttpPost]
@@ -205,14 +205,9 @@ namespace SmartFin.Controllers
                 if (goal == null)
                     return NotFound("Цель не найдена");
 
-                if (!goal.Users.Any(u => u.Id == userId))
-                    return Unauthorized("Только участники цели могут создавать приглашения");
-
                 // Генерируем зашифрованный токен
                 var token = _goalService.GenerateSecureInviteLink(goalId, userId);
 
-                // Формируем полную ссылку
-                var baseUrl = $"{Request.Scheme}://{Request.Host}";
                 var inviteUrl = $"/join?token={token}";
 
                 return Ok(new { inviteUrl });
