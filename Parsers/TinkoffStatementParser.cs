@@ -11,18 +11,17 @@ using Smartfin.Extensions;
 
 namespace SmartFin.Parsers
 {
-    public class TinkoffStatementParser : IBankStatementParser
+    public class TinkoffStatementParser : BankStatementParser
     {
-        private readonly TransactionService _transactionService;
-        private readonly int _userId;
-
-        public TinkoffStatementParser(TransactionService transactionService, int userId)
+        public TinkoffStatementParser(
+        TransactionService transactionService,
+        CategoryService categoryService,
+        int userId)
+        : base(transactionService, categoryService, userId)
         {
-            _transactionService = transactionService;
-            _userId = userId;
         }
 
-        public async Task<IEnumerable<TransactionDto>> ParseAndImportAsync(Stream fileStream)
+        public override async Task<IEnumerable<TransactionDto>> ParseAndImportAsync(Stream fileStream)
         {
             var importedTransactions = new List<TransactionDto>();
             var reader = new PdfReader(fileStream);

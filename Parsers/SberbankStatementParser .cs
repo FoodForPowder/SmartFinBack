@@ -12,23 +12,21 @@ using System.Collections.Generic;
 
 namespace SmartFin.Parsers
 {
-    public class SberbankStatementParser : IBankStatementParser
+    public class SberbankStatementParser : BankStatementParser
     {
-        private readonly TransactionService _transactionService;
-        private readonly CategoryService _categoryService;
-        private readonly int _userId;
 
         // Кэш для хранения категорий, чтобы не делать запрос в БД для каждой транзакции
         private Dictionary<string, int?> _categoryCache = new Dictionary<string, int?>();
 
-        public SberbankStatementParser(TransactionService transactionService, CategoryService categoryService, int userId)
+        public SberbankStatementParser(
+        TransactionService transactionService,
+        CategoryService categoryService,
+        int userId)
+        : base(transactionService, categoryService, userId)
         {
-            _transactionService = transactionService;
-            _categoryService = categoryService;
-            _userId = userId;
         }
 
-        public async Task<IEnumerable<TransactionDto>> ParseAndImportAsync(Stream fileStream)
+        public override async Task<IEnumerable<TransactionDto>> ParseAndImportAsync(Stream fileStream)
         {
             // Заполняем кэш категорий при первом запуске
             await FillCategoryCacheAsync();

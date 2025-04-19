@@ -15,23 +15,22 @@ using SmartFin.DTOs.Expense;
 
 namespace SmartFin.Parsers
 {
-    public class VTBStatementParser : IBankStatementParser
+    public class VTBStatementParser : BankStatementParser
     {
-        private readonly TransactionService _transactionService;
-        private readonly CategoryService _categoryService;
-        private readonly int _userId;
 
         // Кэш для хранения категорий
         private Dictionary<string, int?> _categoryCache = new Dictionary<string, int?>();
 
-        public VTBStatementParser(TransactionService transactionService, CategoryService categoryService, int userId)
-        {
-            _transactionService = transactionService;
-            _categoryService = categoryService;
-            _userId = userId;
-        }
+        public VTBStatementParser(
+        TransactionService transactionService, 
+        CategoryService categoryService, 
+        int userId) 
+        : base(transactionService, categoryService, userId)
+    {
+    }
 
-        public async Task<IEnumerable<TransactionDto>> ParseAndImportAsync(Stream fileStream)
+
+        public override async Task<IEnumerable<TransactionDto>> ParseAndImportAsync(Stream fileStream)
         {
             var importedTransactions = new List<TransactionDto>();
 

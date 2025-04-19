@@ -15,11 +15,11 @@ namespace SmartFin.Classes
             _categoryService = categoryService;
         }
 
-        public IBankStatementParser CreateParser(string bankName, int userId)
+        public BankStatementParser CreateParser(string bankName, int userId)
         {
             return bankName.ToLower() switch
             {
-                "tinkoff" => new TinkoffStatementParser(_transactionService, userId),
+                "tinkoff" => new TinkoffStatementParser(_transactionService, _categoryService, userId),
                 "sberbank" => new SberbankStatementParser(_transactionService, _categoryService, userId),
                 "yandex" => new YandexBankStatementParser(_transactionService, _categoryService, userId),
                 "vtb" => new VTBStatementParser(_transactionService, _categoryService, userId),

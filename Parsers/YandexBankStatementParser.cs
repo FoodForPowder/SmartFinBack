@@ -15,22 +15,20 @@ using SmartFin.DTOs.Expense;
 
 namespace SmartFin.Parsers
 {
-    public class YandexBankStatementParser : IBankStatementParser
+    public class YandexBankStatementParser : BankStatementParser
     {
-        private readonly TransactionService _transactionService;
-        private readonly CategoryService _categoryService;
-        private readonly int _userId;
-
+       
         private Dictionary<string, int?> _categoryCache = new Dictionary<string, int?>();
 
-        public YandexBankStatementParser(TransactionService transactionService, CategoryService categoryService, int userId)
+        public YandexBankStatementParser(
+      TransactionService transactionService,
+      CategoryService categoryService,
+      int userId)
+      : base(transactionService, categoryService, userId)
         {
-            _transactionService = transactionService;
-            _categoryService = categoryService;
-            _userId = userId;
         }
 
-        public async Task<IEnumerable<TransactionDto>> ParseAndImportAsync(Stream fileStream)
+        public override async Task<IEnumerable<TransactionDto>> ParseAndImportAsync(Stream fileStream)
         {
             var importedTransactions = new List<TransactionDto>();
             await InitializeCategories();
