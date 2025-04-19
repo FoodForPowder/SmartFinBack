@@ -65,6 +65,8 @@ builder.Services.AddScoped<TransactionService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<CategoryService>();
 builder.Services.AddScoped<BankStatementParserFactory>();
+// В методе ConfigureServices в Program.cs
+builder.Services.AddSingleton<CryptoHelper>();
 // Регистрируем фоновую службу
 builder.Services.AddHostedService<GoalNotificationBackgroundService>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

@@ -194,25 +194,47 @@ namespace SmartFin.Controllers
         }
 
         [HttpGet("{goalId}/invite")]
-        public ActionResult<string> GenerateInviteLink(int goalId)
+        public async Task<ActionResult<string>> GenerateInviteLink(int goalId)
         {
-            var baseUrl = $"{Request.Scheme}://{Request.Host}";
-            var inviteUrl = $"{baseUrl}/api/goal/join/{goalId}";
-            return Ok(new { inviteUrl });
-        }
-
-        [HttpPost("join/{goalId}")]
-        public async Task<ActionResult> JoinGoal(int goalId, [FromQuery] int userId)
-        {
-            // var userId = User.FindFirstValue("UserId");
-            // if (string.IsNullOrEmpty(userId))
-            // {
-            //     return Unauthorized("Необходимо войти в систему");
-            // }
+            var userId = int.Parse(User.FindFirstValue("UserId"));
 
             try
             {
-                await _goalService.JoinGoalAsync(goalId, userId);
+                // Проверяем, существует ли цель и является ли пользователь участником
+                var goal = await _goalService.GetGoalByIdAsync(goalId);
+                if (goal == null)
+                    return NotFound("Цель не найдена");
+
+                if (!goal.Users.Any(u => u.Id == userId))
+                    return Unauthorized("Только участники цели могут создавать приглашения");
+
+                // Генерируем зашифрованный токен
+                var token = _goalService.GenerateSecureInviteLink(goalId, userId);
+
+                // Формируем полную ссылку
+                var baseUrl = $"{Request.Scheme}://{Request.Host}";
+                var inviteUrl = $"/join?token={token}";
+
+                return Ok(new { inviteUrl });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        // Присоединение к цели по ссылке-приглашению
+        [HttpPost("join")]
+        public async Task<ActionResult> JoinGoal([FromQuery] string token)
+        {
+            if (string.IsNullOrEmpty(token))
+                return BadRequest("Не указан токен приглашения");
+
+            var userId = int.Parse(User.FindFirstValue("UserId"));
+
+            try
+            {
+                await _goalService.JoinGoalBySecureLink(token, userId);
                 return Ok("Вы успешно присоединились к цели");
             }
             catch (Exception ex)

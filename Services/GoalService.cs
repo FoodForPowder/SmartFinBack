@@ -19,12 +19,19 @@ namespace SmartFin.Services
         private readonly SmartFinDbContext _context;
         private readonly UserService _userService;
         private readonly TransactionService _transactionService;
+        private readonly CryptoHelper _cryptoHelper;
 
-        public GoalService(SmartFinDbContext context, NotificationService notificationService, UserService userService, TransactionService transactionService)
+        public GoalService(
+            SmartFinDbContext context,
+            NotificationService notificationService,
+            UserService userService,
+            TransactionService transactionService,
+            CryptoHelper cryptoHelper)
         {
             _context = context;
             _userService = userService;
             _transactionService = transactionService;
+            _cryptoHelper = cryptoHelper;
         }
 
         public async Task<IEnumerable<Goal>> GetUserGoalsAsync(int userId)
@@ -262,7 +269,7 @@ namespace SmartFin.Services
             {
                 throw new Exception("Вы не можете присоединиться к цели, так как ежемесячный платеж превышает 20% от вашего дохода");
             }
-            
+
             goal.Users.Add(user);
             (bool successful, Goal newGoal) = await RecalculateGoal(goal.AsDto());
             if (!successful)
@@ -273,8 +280,68 @@ namespace SmartFin.Services
             // Копируем данные из пересчитанной цели
             goal.dateOfEnd = newGoal.dateOfEnd;
             goal.payment = newGoal.payment;
-            
+
             await _context.SaveChangesAsync();
+        }
+        public string GenerateSecureInviteLink(int goalId, int creatorUserId)
+        {
+            // Данные для шифрования - ID цели, ID создателя и срок действия
+            string payload = $"{goalId}|{creatorUserId}|{DateTime.UtcNow.AddDays(7).Ticks}";
+            return _cryptoHelper.Encrypt(payload);
+        }
+
+        // Метод для расшифровки и валидации ссылки-приглашения
+        public (int goalId, int creatorId, bool isValid) ValidateInviteLink(string token)
+        {
+            // Расшифровываем токен
+            string decryptedData = _cryptoHelper.Decrypt(token);
+
+            if (string.IsNullOrEmpty(decryptedData))
+                return (0, 0, false);
+
+            // Разбираем данные
+            string[] parts = decryptedData.Split('|');
+            if (parts.Length != 3)
+                return (0, 0, false);
+
+            // Преобразуем данные
+            if (!int.TryParse(parts[0], out int goalId) ||
+                !int.TryParse(parts[1], out int creatorId) ||
+                !long.TryParse(parts[2], out long expiryTicks))
+                return (0, 0, false);
+
+            // Проверяем срок действия
+            DateTime expiryDate = new DateTime(expiryTicks);
+            bool isValid = expiryDate > DateTime.UtcNow;
+
+            return (goalId, creatorId, isValid);
+        }
+
+        // Метод для присоединения к цели по зашифрованной ссылке
+        public async Task<bool> JoinGoalBySecureLink(string token, int userId)
+        {
+            // Валидируем токен
+            var (goalId, creatorId, isValid) = ValidateInviteLink(token);
+
+            if (!isValid)
+                throw new Exception("Ссылка-приглашение недействительна или срок её действия истек");
+
+            // Получаем цель
+            var goal = await GetGoalByIdAsync(goalId);
+            if (goal == null)
+                throw new Exception($"Цель с ID {goalId} не найдена");
+
+            // Проверяем создателя приглашения
+            if (!goal.Users.Any(u => u.Id == creatorId))
+                throw new Exception("Недействительное приглашение: создатель не является участником цели");
+
+            // Проверяем, не является ли пользователь уже участником
+            if (goal.Users.Any(u => u.Id == userId))
+               throw new Exception("Вы уже являетесь участником цели");
+
+            // Присоединяем пользователя к цели
+            await JoinGoalAsync(goalId, userId);
+            return true;
         }
     }
 }
